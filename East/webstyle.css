@@ -1,0 +1,206 @@
+/*
+	invite,remove,demotion,promotion,shutdown,logoff,memberleave,self,whisperfrom,whisperto,emote,talk,servererror,serverinfo
+	userself,userwhisperfrom,useremote,usertalk
+	msgself,msgwhisperfrom,msgemote,msgtalk
+*/
+a:link {color: white;}
+a:visited {color: white;}
+a:hover {color: #80E6FF;}
+a:active {color: white;}
+body {color:white;}
+#chat
+{
+	height:400px;
+	width: 70%;
+	float:left;
+	overflow-y:scroll;
+	background-color:black;
+}
+#Lmessage, #Rmessage
+{
+	height:30px;
+	width: 5%;
+	background-color:black;
+	color:white;
+}
+#message
+{
+	height:30px;
+	width: 60%;
+	background-color:black;
+	color:white;
+	padding: 5px
+}
+#msgPass
+{
+	height:30px;
+	background-color:black;
+	color:white;
+	padding: 5px
+}
+#pass
+{
+	color:black;
+	padding: 5px
+}
+#sendToBot
+{
+	height:30px;
+}
+#users
+{
+	height:400px;
+	width:30%;
+	float:right;
+	overflow-y:auto;
+	background-color:black;
+}
+.hoverstats{
+	width:100%;
+}
+.hover{
+	position:fixed;
+	display:none;
+	border: 3px outset #80C0C0;
+	background: rgba(92, 153, 92, 0.8);  
+	color: #FFB280;
+}
+.hoverlabel{
+	color: #80E6FF;
+	
+}
+.usertable
+{
+	width: 100%;
+	cursor:default;
+}
+
+.users0
+{
+	border: 3px outset #7B7B84;
+	display: table;
+
+	height: 35px;
+	padding: 3px 3px 3px 3px;
+	margin-top: 3px;
+	
+}
+.users2
+{
+	display: table;            /* this makes borders/margins work */
+	border: 3px outset #FFAD33;
+	
+	height: 35px;
+	padding: 3px 3px 3px 3px;
+	margin-top: 3px;
+}
+.icon img, .level
+{
+	height:20px;
+	width:30px;
+	
+}
+.level
+{
+	text-align:center; 
+    vertical-align:middle;
+	color: #FFD633;
+}
+.username
+{
+	height:20px;
+	width: 150px;
+	
+}
+.clan
+{
+	color: #FFD633;
+	width:50px;
+
+}
+
+.ping
+{
+
+}
+.left
+{
+	white-space: nowrap;
+	padding-right:5px;
+}
+.right
+{
+	width: 100%;
+	word-break:break-all;
+}
+.time
+{
+	color:white;
+}
+/*<> start*/
+.self
+{
+	color:#0083cc;
+}
+
+.whisperfrom, .whisperto
+{
+	color:#ff8000;
+}
+
+.emote
+{
+	color:yellow;
+}
+
+.talk
+{
+	color:#0083cc;
+}
+/*<> end*/
+
+/*Username start*/
+.userself
+{
+
+	color:cyan;
+}
+
+.userwhisperfrom, .userwhisperto
+{
+	color:yellow;
+}
+
+.useremote, .usertalk2
+{
+	color:white;
+}
+
+.usertalk0
+{
+	color:yellow;
+}
+/*Username end*/
+
+/*Message start*/
+.msgself
+{
+	color:white;
+
+}
+
+.msgwhisperfrom,  .msgwhisperto
+{
+	color:#999999;
+}
+
+.msgemote
+{
+	color:yellow;
+}
+
+.msgtalk
+{
+	color:white;
+}
+/*Message end*/

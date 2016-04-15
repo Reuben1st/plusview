@@ -1,0 +1,30 @@
+<html>
+	<head>
+		<link rel="stylesheet" type="text/css" href="webstyle.css">
+		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+		<script src="webbot.js"></script>
+		<script language="JavaScript" src="Encryption/BigInt.js"></script>
+		<script language="JavaScript" src="Encryption/Barrett.js"></script>
+		<script language="JavaScript" src="Encryption/RSA.js"></script>
+		
+	</head>
+
+	<div id="chat">
+		<table class="webtable">	
+		</table>
+	</div>
+	<div id="users">
+		<table class="usertable">
+			
+		</table>
+	</div>
+	<div id="msgToBot">
+		<input id="Lmessage" /><input id="message" /><input id="Rmessage" /><span id="pass">Password: </span><input id="msgPass" type="password" /><button id="sendToBot">Send</button>
+	</div>
+	<iframe id="hiddenframe" style="display:none" src = ""></iframe>
+	<div id="hoverUsers">
+	
+	</div>
+
+
+</html>
