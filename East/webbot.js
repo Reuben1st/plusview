@@ -95,11 +95,11 @@ function updateUser(json)
 		
 		$("#hoverUsers").append(hoverData)
 		newData = "<tr class='users"+f[i]+"'>";
-		newData = newData + "<td class='icon'><img src='images/tft/"+a[i]+".gif' /></td>";
+		newData = newData + "<td class='icon'><img src='../images/tft/"+a[i]+".gif' /></td>";
 		newData = newData + "<td class='level'>"+b[i]+"</td>";
 		newData = newData + "<td class='username'>"+c[i]+"</td>";
 		newData = newData + "<td class='clan'>"+d[i]+"</td>";
-		newData = newData + "<td class='ping'><img src='images/ping/"+bar+".gif' /></td></tr>";
+		newData = newData + "<td class='ping'><img src='../images/ping/"+bar+".gif' /></td></tr>";
 		
 
 		if (f[i] == 0)
