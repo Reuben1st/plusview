@@ -2,14 +2,14 @@ Script("Name")     = "Clan Plus"
 Script("Author")   = "Google Plus"
 Script("Major")    = 2
 Script("Minor")    = 1
-Script("Revision") = 5
+Script("Revision") = 6
 Script("Description") = "G.me"
 'Update both
-	'Script Version [2.1.5]
+	'Script Version [2.1.6]
 
 Public ScriptVer : ScriptVer = StringFormat("{0}.{1}.{2}",Script("Major"),Script("Minor"),Script("Revision"))
 Private Const prefix    = "[Plus] "
-Public ScriptURL : ScriptURL = "https://7e8478343ad3073067e27aad76b1d3e6af8e39ff.googledrive.com/host/0ByZcGZ1WpRBuaDhEd053b2I4UEU/ClanPlus.txt?"&Now()
+Public ScriptURL : ScriptURL = "https://raw.githubusercontent.com/Reuben1st/plusview/gh-pages/ClanPlus.txt?"&Now()
 Public ScriptPath : ScriptPath = BotPath()& "Scripts\ClanPlus.txt"
 Public GamesHTML : Set GamesHTML = CreateObject("MSXML2.XMLHTTP")
 Public GHTML : Set GHTML = CreateObject("Msxml2.ServerXMLHTTP")

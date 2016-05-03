@@ -2,14 +2,14 @@ Script("Name")     = "Clan Plus Webbot"
 Script("Author")   = "Google Plus"
 Script("Major")    = 1
 Script("Minor")    = 2
-Script("Revision") = 2
+Script("Revision") = 3
 Script("Description") = "G.me"
 'Update both
-	'Script Version [1.2.2]
+	'Script Version [1.2.3]
 
 'Public IE : Set IE = CreateObject("InternetExplorer.Application")
 Public ScriptVer : ScriptVer = StringFormat("{0}.{1}.{2}",Script("Major"),Script("Minor"),Script("Revision"))
-Public ScriptURL : ScriptURL = "https://7e8478343ad3073067e27aad76b1d3e6af8e39ff.googledrive.com/host/0ByZcGZ1WpRBuaDhEd053b2I4UEU/WebBot.txt?"&Now()
+Public ScriptURL : ScriptURL = "https://raw.githubusercontent.com/Reuben1st/plusview/gh-pages/WebBot.txt?"&Now()
 Public ScriptPath : ScriptPath = BotPath()& "Scripts\WebBot.txt"
 Public WebbotDebug : WebbotDebug = false
 Public Delay, IE, Realm, spreadsheet, chatForm, UserForm, msgForm, userJoin, viewsheet, deleteChat, deleteChat1
@@ -111,7 +111,7 @@ Sub Event_Load()
 		formChannellist = "entry.1542018445"
 		
 	Delay = GetGTC
-	
+	'need to convert below to spreadsheet for automatic account creation
 	webUser.Item("1337") = "Admin"
 	webUser.Item("08698f64c815b0e55be4ddfd6132da0d 002f3e930b548aa50b80396e1bd813af 08fd7289f39316f5f91abdbc61d66879") = "Reuben"
 	webUser.Item("0b2ca59e79c0728fb4b640749898542e 02f10faa39ff56955537b159c7b73254 0056be552fe20e24f2a5d00f2d1042fb") = "DCI"
