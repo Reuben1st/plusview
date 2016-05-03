@@ -1,0 +1,1184 @@
+Script("Name")     = "Clan Plus"
+Script("Author")   = "Google Plus"
+Script("Major")    = 2
+Script("Minor")    = 1
+Script("Revision") = 5
+Script("Description") = "G.me"
+'Update both
+	'Script Version [2.1.5]
+
+Public ScriptVer : ScriptVer = StringFormat("{0}.{1}.{2}",Script("Major"),Script("Minor"),Script("Revision"))
+Private Const prefix    = "[Plus] "
+Public ScriptURL : ScriptURL = "https://7e8478343ad3073067e27aad76b1d3e6af8e39ff.googledrive.com/host/0ByZcGZ1WpRBuaDhEd053b2I4UEU/ClanPlus.txt?"&Now()
+Public ScriptPath : ScriptPath = BotPath()& "Scripts\ClanPlus.txt"
+Public GamesHTML : Set GamesHTML = CreateObject("MSXML2.XMLHTTP")
+Public GHTML : Set GHTML = CreateObject("Msxml2.ServerXMLHTTP")
+Public GPlus, curDate, Greet, ClanMode, MyRank, ClanPrivate, ClanPublic
+Public InviteStore : Set InviteStore = CreateObject("Scripting.Dictionary") : InviteStore.CompareMode = 1
+Public ClanGames : Set ClanGames = CreateObject("Scripting.Dictionary") : ClanGames.CompareMode = 1
+Public SpamTimeout : Set SpamTimeout = CreateObject("Scripting.Dictionary") : SpamTimeout.CompareMode = 1
+Public ExpelStore : Set ExpelStore = CreateObject("Scripting.Dictionary") : ExpelStore.CompareMode = 1
+Public Page, Realm, Server, Safelist, InactiveDays, InactiveCounter, LastGreet, LastReply, accessUser, LastExpel
+Public GateWay, StoreUser, StoreDSP, RetryTag, RetryTag1, ClanName, GameCheck, GameStatusm, Kick, InActiveUsers, InActiveUsersTemp
+'Public GGinCH
+Public PLUSCon : Set PLUSCon = CreateObject("ADODB.connection")
+Public DBPass, DBHost, WebBotName, DBUser, Botname, Quote, ReNew, Chan,fullclan
+Public GamesURL : GamesURL = "http://plus.pshost.net/plus/games.php?"
+Public IE, WebbotEnabled
+Public WebbotDebug : WebbotDebug = False
+
+Public Function GS(SplitWhat, By) : GS = Split(SplitWhat, By) End Function
+Public Function Count(CountIn,CountWhat) : Count = Ubound(GS(CountIn,CountWhat)) End Function
+
+Public PlusDB : PlusDB = BotPath()& "Scripts\PlusDB.mdb"
+Public TxFSO : Set TxFSO = CreateObject("Scripting.FileSystemObject")
+Public TxCon : Set TxCon = CreateObject("ADODB.connection")
+Public plusseen : Set plusseen = CreateObject("Scripting.Dictionary") : plusseen.CompareMode = 1
+Page = 1
+InactiveDays = 31
+Safelist = "[R.E.U.B.E.N][Firelord17][gness][420.Gnome][hotdogboy][plus.google.com][PingGnome][reaction][monkeh.][Grizzly[Ninja]][G(o)oN]][mutatedprobe][Cruicifixti0n.x][LightNing-][HeavenlyAura][anhero][Lowtax][pink_hr.Lr.0l][AnandShimpi][Arch-]"
+Quote = """"
+
+
+
+ClanPrivate = 25
+ClanPublic = 1800 'seconds
+
+Sub Event_Load()
+	Botname = Botvars.Username
+	
+	If UpdateVer Then FetchScript : Exit Sub
+	CreateObj "LongTimer", "Restore"
+	Restore.Interval = 5
+	Restore.Enabled = False
+	
+	CreateObj "LongTimer", "Expel"
+	Expel.Interval = 20
+	Expel.Enabled = False
+	
+	CreateObj "LongTimer", "Spam"
+	Spam.Interval = 0
+	Spam.Enabled = False
+	
+	CreateObj "LongTimer", "Load"
+	Load.Interval = ClanPublic
+	Load.Enabled = False
+	
+	CreateObj "LongTimer", "tmpJoin"
+	tmpJoin.Interval = 5
+	tmpJoin.Enabled = False
+	
+	PlusConnect
+	
+	'CreateObj "LongTimer", "STW"
+	'STW.Interval = 5
+	'STW.Enabled = True
+	
+	If Botvars.Username = "GoogleGames" Then GG = False Else GG = True
+	'GG = False
+	
+	If GetSettingsEntry("StoreSession") = "" Then WriteSettingsEntry "StoreSession", GG
+	If GetSettingsEntry("WebbotEnable") = "" Then WriteSettingsEntry "WebbotEnable", GG
+	
+	'WriteSettingsEntry "StoreSession", False
+	'WriteSettingsEntry "WebbotEnable", False 'disable webbot
+	
+	
+	If GetSettingsEntry("Greet") = "" Then WriteSettingsEntry "Greet", True
+	Greet = GetSettingsEntry("Greet")
+	If GetSettingsEntry("MyRank") = "" Then WriteSettingsEntry "MyRank", "" Else MyRank = GetSettingsEntry("MyRank")
+	If MyRank = "" Then 
+		AddChat VBGreen, "Clan rank has not been established.", vbYellow, " Reconnecting..." : 
+		AddQ Command(BotVars.Username, "/reconnect", True)
+	End If
+	
+	
+		Server = LCase(botvars.server)
+	Select Case Server
+		Case "uswest.battle.net" Realm = "Lordaeron"
+		Case "useast.battle.net" Realm = "Azeroth"
+		Case Else Realm = ""
+	End Select
+
+	If Realm = "" Then
+		If Left(Server, 10) = "199.108.55" Then Realm = "Azeroth"
+		If left(server, 9) = "12.129.236" Then Realm = "Lordaeron"
+	End If
+	
+	If Realm = "" Then
+		Realm = "Unavailable"
+	End If
+	
+	'If GetSettingsEntry("WebbotEnable") Then
+	'	WebbotEnabled = True
+	'	Set IE = CreateObject("InternetExplorer.Application")
+	'	IE.Navigate "plus.pshost.net/plus/db.php" 
+	'	IE.Visible = WebbotDebug
+	'	WaitForLoad(IE)
+	'	
+'
+'			If GetSettingsEntry("Webbot") = "" OR GetSettingsEntry("Webbot") = "removed" Then 
+'				WebBotName = LCase(Botname & Realm)
+'				WriteSettingsEntry "Webbot", WebBotName
+'				IE.Document.All.Item("dbname").Value = WebBotName
+'				IE.Document.All.Item("sb3").Value = DBPass
+'				IE.Document.All.Item("create-webbot").Click	
+'				IE.Document.All.Item("users").Value = WebBotName&"users"
+'				IE.Document.All.Item("sb4").Value = DBPass
+'				IE.Document.All.Item("create-user").Click
+'				IE.Document.All.Item("botlistname").Value = botvars.Username
+'				IE.Document.All.Item("realm").Value = realm
+'				IE.Document.All.Item("sb9").Value = DBPass
+'				IE.Document.All.Item("botlist-insert").Click				
+'				Addchat VBYellow, "WebBot user created."
+'			Else 
+'				WebBotName = GetSettingsEntry("Webbot")
+'			End If
+'			AddChat VBGreen, "View your webbot at http://plus.pshost.net/plus/webbot.php?dbname=" & WebBotName
+'
+'	Else
+'		WebbotEnabled = False
+'	End If
+	
+	'GGinCH = False
+
+	AddQ StringFormat("Script version: {0} | Connected to: {1}",ScriptVer,Realm)
+	
+
+End Sub
+
+Sub Load_timer()
+	AddQ Command(BotVars.Username, "/clan public " & Username, True)
+	ClanMode = "public"
+	AddQ "Clanmode: Public"
+	Load.Enabled = False
+End Sub
+
+'Public Sub UserStats()
+'If WebbotEnabled Then
+'	For Each u in Channel.Users
+'	TFlag = GetInternalDataByUsername(u.Name, 1)
+'	TPing = GetInternalDataByUsername(u.Name, 2)
+'		With u.Stats
+'			Select Case .Game						
+'				Case "WAR3", "W3XP"
+'				 'ChannelName$$ChannelCount$$Username$Flags$Ping$Level$ClanTag$IconCode
+'				 If .Clan = "" Then ClanTag = " " Else ClanTag = .Clan
+'					UserDataTmp = StringFormat("{0}${1}${2}${3}${4}${5}",u.Name, TFlag, TPing, .Level, ClanTag, StrReverse(.Icon))
+'				Case Else
+'					UserDataTmp = ""
+'			End Select	
+'		End With
+'		
+'		If UserData <> "" Then UserData = UserData &","
+'		UserData = UserData & UserDataTmp
+'	Next
+'	ChannelData = StringFormat("{0}$${1}$$",Channel.Name, Channel.Users.Count)
+'	If WebbotEnabled Then
+'		IE.Document.All.Item("webbotuserin").Value = WebBotName&"users"
+'		IE.Document.All.Item("userin").Value = "User List"
+'		IE.Document.All.Item("userdata").Value = ChannelData & UserData
+'		IE.Document.All.Item("sb5").Value = DBPass
+'		IE.Document.All.Item("insert-user").Click
+'	End If
+'End If
+'End Sub
+
+
+'Sub RemoveWebSession()
+'	If Not GetSettingsEntry("StoreSession") And WebbotEnabled Then
+'		WriteSettingsEntry "Webbot", "removed"
+'		IE.Document.All.Item("session").Value = WebBotName
+'		IE.Document.All.Item("sb7").Value = DBPass
+'		IE.Document.All.Item("session-clear").Click	
+'		IE.Document.All.Item("botremovename").Value = Botvars.Username
+'		IE.Document.All.Item("botremoverealm").Value = Realm
+'		IE.Document.All.Item("sb10").Value = DBPass
+'		IE.Document.All.Item("botlist-remove").Click
+'	End If
+'	IE.Quit
+'End Sub
+
+'Sub Event_Shutdown()
+'	If WebbotEnabled Then
+'		RemoveWebSession
+'	End If
+'End Sub
+
+'Sub Event_Close()
+'	If WebbotEnabled Then
+'		RemoveWebSession
+'	End If
+'End Sub
+
+'Sub WaitForLoad(obj)
+'	Do While IE.Busy: Loop
+'	Do While obj.readyState <> 4:  Loop
+'End Sub
+
+
+'Sub STW_timer()
+'	If WebbotEnabled Then
+'		GHTML.Open "GET", "http://plus.pshost.net/plus/stealth.php?dbname="&WebBotName&"users", False
+'		GHTML.Send
+'		GPlus = GHTML.ResponseText
+'		Sendto = Split(GPlus,"[00101011]")
+'		If UBound(Sendto) < 0 Then Exit Sub
+'		For I = 1 To UBound(Sendto)
+'			AddQ Command(BotVars.Username, Sendto(I), True)
+'		'	AddQ Sendto(I)
+'		Next
+'		IE.Document.All.Item("webchatrenew").Value = WebbotName&"users"
+'		IE.Document.All.Item("sb6").Value = DBPass
+'		IE.Document.All.Item("chat-clear").Click
+'	End If
+'End Sub
+
+REM function create_links(strText)
+    REM strText = " " & strText
+    REM strText = ereg_replace(strText, "(^|[\n ])([\w]+?://[^ ,""\s<]*)", "$1<a href=""$2"" target=_blank>$2</a>")
+    REM strText = ereg_replace(strText, "(^|[\n ])((www|ftp)\.[^ ,""\s<]*)", "$1<a href=""http://$2"" target=_blank>$2</a>")
+    REM strText = ereg_replace(strText, "(^|[\n ])([a-z0-9&\-_.]+?)@([\w\-]+\.([\w\-\.]+\.)*[\w]+)", "$1<a href=""mailto:$2@$3"">$2@$3</a>")
+    REM strText = right(strText, len(strText)-1)		
+	REM Link = Split(StrText,"<a href=" & Quote)
+	
+	REM For I = 1 To UBound(Link)
+		REM FixLink = Replace(Split(Link(I),">")(0),"&amp;","&")
+		REM StrText = Replace(StrText,Split(Link(I),">")(0),FixLink)
+	REM Next
+    REM create_links = strText
+	
+REM end function
+
+REM function ereg_replace(strOriginalString, strPattern, strReplacement)
+    REM ' Function replaces pattern with replacement
+    REM dim objRegExp : set objRegExp = new RegExp
+    REM objRegExp.Pattern = strPattern
+    REM objRegExp.IgnoreCase = True
+    REM objRegExp.Global = True
+    REM ereg_replace = objRegExp.replace(strOriginalString, strReplacement)
+    REM set objRegExp = nothing
+REM end function
+
+'Sub Webbot(Username,Message,Flags, ChatType,w )
+'	If WebbotEnabled Then
+'		If Left(Message,3) <> "*+*" Then
+'			IE.Document.All.Item("webbotname").Value = WebBotName
+'			IE.Document.All.Item("username").Value = Username
+'			IE.Document.All.Item("code").Value = Message
+'			IE.Document.All.Item("time").Value = FixTime
+'			IE.Document.All.Item("chattype").Value = ChatType
+'			IE.Document.All.Item("flags").Value = Flags
+'			IE.Document.All.Item("whisper").Value = w
+'			IE.Document.All.Item("sb2").Value = DBPass
+'			IE.Document.All.Item("webbot-submit").Click
+'		End If
+'	End If
+'End Sub												
+
+Public Function FixTime()
+	H = Hour(Time) : N = Minute(Time) : S = Second(Time)
+	If H > 12 Then TwelveHours = "PM" : H = H-12 Else TwelveHours = "AM"
+	If Len(H) < 2 Then H = "0"& H
+	If Len(N) < 2 Then N = "0"& N
+	If Len(S) < 2 Then S = "0"& S
+	FixTime = StringFormat("{0}:{1}:{2} {3}",H,N,S,TwelveHours)
+	
+End Function
+
+Public Function UpdateVer()
+	GHTML.Open "GET", ScriptURL, False
+	GHTML.Send
+	GPlus = GHTML.ResponseText
+	If UBound(Split(GPlus,"Script Version [")) = 0 Then Addchat vbred, prefix & "Unable to locate script version." : Exit Function
+	If Split(Split(GPlus,"Script Version [")(1),"]")(0) > ScriptVer Then UpdateVer = True
+End Function
+
+Sub Event_UserJoins(Username, Flags, Message, Ping, Product, Level, OriginalStatstring, Banned)
+	'UserStats()
+	UsersInChannel = Channel.Users.Count
+	userAccess = GetDBEntry(Username).Rank
+	if userAccess = 1 then AddQ Command(BotVars.Username, "/del " & Username, True)
+	'If LCase(Username) = "googlegames" And LCase(Username) <> LCase(BotVars.Username) Then GGinCH = True
+	'If ClanGames.Exists(LCase(Username)) Then 
+	'	If Realm = "Azeroth" Then AddQ "/w GooglePlusBot " & Username
+	'	ClanGames.Remove(LCase(Username))
+	'End If
+	
+	On Error Resume Next
+
+	If UsersInChannel >= ClanPrivate And ClanMode <> "private" Then ClanMode = "private" : Load.Enabled = True : AddQ Command(BotVars.Username, "/clan private " & Username, True) : AddQ "Clanmode: Private"
+	
+	If Count(Username,"@") > 0 Or Count(Username,"#") > 0 Then Exit Sub
+	UpdateUser Username
+	checkPounce Username
+	Check = Split(OriginalStatstring)
+	If Greet And MyRank > 2 Then
+		If Check(0) = "PX3W" OR Check(0) = "3RAW" Then
+			If UBound(Check) = 3 Then 'In clan
+				If LCase(Left(Username,4)) = "plus" Or LCase(Left(Username,6)) = "google" Then
+					Exit Sub
+				Else
+					'If Not GGinCH Then
+						AddQ StringFormat("/w {0} [+{1}] For a list of hosted games, type: .games or visit http://clanplus.tk",Username,Ping)
+					'End If
+					Exit Sub 
+				End If
+			Else
+				If NOT InviteStore.Exists(Username) Then InviteStore.Item(Username) = "whisper"
+				AddQ StringFormat("/w {0} To invite yourself to clan, type: {1}apply",Username,BotVars.Trigger)
+			End If
+			
+			LastGreet = Username
+		End If
+	Else
+		If Greet Then
+			If Check(0) = "PX3W" OR Check(0) = "3RAW" Then
+				If UBound(Check) = 3 Then 'In clan
+					If LCase(Left(Username,4)) = "plus" Or LCase(Left(Username,6)) = "google" Then
+						Exit Sub
+					Else
+						'If Not GGinCH Then
+							AddQ StringFormat("/w {0} [+{1}] For a list of hosted games, type: .games or visit http://clanplus.tk",Username,Ping)
+						'End If
+						Exit Sub 
+					End If
+				End If
+			LastGreet = Username
+		End If
+		End If	
+	End If
+End Sub
+
+Sub Event_UserLeaves(Username, Flags)
+	'UserStats()
+	If Count(Username,"@") > 0 Or Count(Username,"#") > 0 Then Exit Sub 
+	If SpamTimeout.Exists(Username) Then SpamTimeout.Remove(Username)
+	UpdateUser Username
+	plusseen.Remove(Username)
+	'If LCase(Username) = "googlegames" Then GGinCH = False
+End Sub
+
+Sub Restore_Timer()
+	AddQ Command(BotVars.Username, "/promote " & Kick, True)
+	Kick = ""
+	Restore.Enabled = False
+End Sub
+
+Sub Spam_Timer()
+	For Each Spammer in SpamTimeout.Keys
+		If (GetGTC - SpamTimeout.Item(Spammer)) >= 120000 Then If SpamTimeout.Exists(Spammer) Then SpamTimeout.Remove(Spammer)
+	Next
+	If SpamTimeout.Count =< 0 Then Spam.Enabled = False
+End Sub
+
+Sub Event_Shutdown()
+	plusseen.RemoveAll
+	If Kick <> "" Then
+		AddQ Command(BotVars.Username, "/promote " & Kick, True)
+		Kick = ""
+	End If
+End Sub
+
+Sub Event_UserTalk(Username, Flags, Message, Ping)
+'Webbot Username,Message,Flags,"normal",""
+
+If Count(Username,"@") > 0 Or Count(Username,"#") > 0 Then Exit Sub 
+	checkPounce Username
+	Dim UserChange
+	Trigger = BotVars.Trigger
+	If Left(Message,Len(Trigger)) = Trigger Then
+		Trigger = LCase(Trigger)
+		If InviteStore.Exists(Username) Then
+			If LCase(Message) = LCase(Trigger & "apply") Then
+				AddQ Command(BotVars.Username, "/invite " & Username, True)
+				accessUser = Username
+				InviteStore.Remove(Username)
+			End If
+		End If
+	
+		Access = GetDBEntry(Username).Rank
+		
+		If GetDBEntry(Username).flags = "GPLUS" Or Access = 200 Or LCase(Username) = "r.e.u.b.e.n" Then
+			If LCase(Left(Message,Len(Trigger&"+kick "))) = Trigger&"+kick " Then
+				If Kick <> "" Then
+					AddQ Command(BotVars.Username, "/promote " & Kick, True)
+					Kick = ""
+				End If
+				
+				Kick = CStr(Split(Message)(1))
+				If Clan.GetUser(Kick).Rank = 3 Then
+					Restore.Enabled = True
+					If UBound(Split(Message)) > 1 Then Reason = Split(Message," ",3)(2)
+					AddQ Command(BotVars.Username, "/demote " & Kick, True)
+					AddQ StringFormat("/kick {0} {1}",Kick, Reason)
+					Exit Sub
+				Else 
+					Kick = CStr(Split(Message)(1))
+					AddQ StringFormat("/kick {0} {1}",Kick, Reason)
+					Kick = ""
+				End If
+			End If
+			
+			If LCase(Left(Message,Len(Trigger&"demote "))) = Trigger&"demote " Then
+				UserChange = CStr(Split(Message)(1))
+				AddQ Command(BotVars.Username, "/demote " & UserChange, True)
+				AddQ "Demoting: " & UserChange
+			End If
+
+			
+			If LCase(Left(Message,Len(Trigger&"+expel"))) = Trigger&"+expel" Then
+				LastExpel = Split(Trim(Message))(1)
+				If LCase(Split(PlusDBInfo(LastExpel,"Clan"),"*")(1)) = "plus" Then
+					If Clan.GetUser(LastExpel).Rank = 0 Then
+					
+						SQL = "UPDATE `PlusUsers` SET `Clan` = '----'" & _
+						" WHERE `Username` = '" & LastExpel & "'"
+						TxCon.Execute(SQL)
+						AddQ LastExpel & " is on probation and will be kicked out when probation is over."
+					Else
+						Call Clan.GetUser(LastExpel).KickOut()
+						AddQ LastExpel & " has been kicked out of the clan."
+					End If
+					Exit Sub
+				End If
+				
+			End If
+
+			
+			If GetDBEntry(Username).flags = "GPLUS" And Access = 200 Or LCase(Username) = "r.e.u.b.e.n" Then 
+				'If LCase(Left(Message,Len(Trigger&"webbot "))) = Trigger&"webbot " Then
+				'	UserChange = Split(Message)(1)
+				'	Select Case LCase(UserChange)
+				'		Case "true","enable","yes","on","1" 	I = True
+				'		Case "false","disable","no","off","0"	I = False
+				'	End Select
+				'	If I = "" Then I = True
+				'	WriteSettingsEntry "WebbotEnable", I
+				'	AddQ "Webbot Enabled: " & I
+				'End If
+				
+				'If LCase(Left(Message,Len(Trigger&"session "))) = Trigger&"session " Then
+				'	UserChange = Split(Message)(1)
+				'	Select Case LCase(UserChange)
+				'		Case "true","enable","yes","on","1" 	I = True
+				'		Case "false","disable","no","off","0"	I = False
+				'	End Select
+				'	If I = "" Then I = True
+				'	WriteSettingsEntry "StoreSession", I
+				'	AddQ "Webbot Session Enabled: " & I
+				'End If
+				
+				
+				
+				If LCase(Left(Message,Len(Trigger&"promote "))) = Trigger&"promote " Then
+					UserChange = Split(Message)(1)
+					AddQ Command(BotVars.Username, "/promote " & UserChange, True)
+					AddQ "Promoting: " & UserChange
+				End If
+				
+				If UBound(Split(LCase(Message),LCase(Trigger) & "+")) > 0 And UBound(Split(Message)) > 0 Then
+					Cmd = Split(Split(Message,LCase(Trigger) & "+")(1))(0)
+					UserChange = " " & Split(Message)(1)
+					If UBound(Split(Message)) > 1 Then Reason = " " & Split(Message," ",3)(2)
+					AddQ Command(BotVars.Username, StringFormat("/{0}{1}{2}",Cmd, UserChange, Reason ), True)
+				End If
+			End If
+		End If
+		If Access > 49 Then
+			If LCase(Left(Message,Len(Trigger&"allow "))) = Trigger&"allow " Then
+				UserChange = Split(Message)(1)
+				userAccess = GetDBEntry(UserChange).Rank
+				If userAccess = 0 then
+					AddQ Command(BotVars.Username, "/add " & UserChange &" 1", True)
+				End If
+				AddQ "Allowing user: " & UserChange & " to join. They must whisper me: " &Trigger&"letmein"
+			End If
+		End If
+		If Access > 100 Then
+		
+			If LCase(Message) = LCase(Trigger & "greet") Then 
+				If LCase(GetSettingsEntry("Greet")) = "false" Then I = True Else I = False
+				WriteSettingsEntry "Greet", I
+				AddQ prefix & "Greet message has been set to: " & I
+			End If
+			
+			If LCase(Message) = LCase(Trigger & "clanupdate") Then 
+				ReloadScript()
+			End If
+			
+			If LCase(Message) = LCase(Trigger & "cleanclan") Then 
+				RemoveClan
+			End If
+			
+			If LCase(Message) = LCase(Trigger & "cleanclan1") Then 
+				PlusDBRemove
+			End If
+		End If
+		
+		If LCase(Left(Message,Len(Trigger&"seen "))) = Trigger&"seen " Then
+			LSeen(Split(Message, " ")(1))
+		End If
+		
+		If LCase(Left(Message,Len(Trigger&"pounce "))) = Trigger&"pounce " Then
+			userTo = Split(Message, " ",3)(1)
+			Msg = Split(Message, " ",3)(2)
+			Pounce Username, userTo, Msg
+			AddQ "Added pounce for " & userTo
+		End If
+		
+		If LCase(Message) = LCase(Trigger & "scriptver") Then 
+			AddQ "Current version is: " & ScriptVer
+		End If
+		
+		If LCase(Message) = LCase(Trigger & "lastgreet") Then 
+			AddQ "Last person greeted: " & LastGreet
+		End If
+		
+		If LCase(Message) = LCase(Trigger & "lastreply") Then 
+			AddQ "Last response to invite: " & LastReply
+		End If
+	End If
+	
+	'If LCase(Left(Message,Len("+games"))) = "+games" Then'And Not GGinCH Then
+	'	If SpamTimeout.Exists(Username) Then Exit Sub
+	'	SpamTimeout.Item(Username) = GetGTC
+	'	Spam.Enabled = True
+	'	If UBound(Split(message)) > 0 Then GameName = Split(Message," ",2)(1) Else GameName = ""
+	'	If Left(GameName,1) = "[" Then GameName = Right(GameName,Len(GameName)-1)
+	'	If Right(GameName,1) = "]" Then GameName = Left(GameName,Len(GameName)-1)
+	'	CurrentGames(GameName)
+	'End If
+	DCIChat Username,Message,1
+End Sub
+
+Sub Event_ClanInviteUserReply(Result)
+	Select Case Result
+		Case 0
+		'accepted
+			LastReply = "Accepted"
+			AddQ "Welcome to Clan Plus."
+			AddQ StringFormat("/w googlegames .add {0} 1",accessUser)
+		Case 4
+		'declined
+			LastReply = "Declined"
+		Case 5
+		'failed
+			LastReply = "Failed"
+			AddQ "Please leave the queue and rejoin the channel."
+		Case 9
+		'full clan
+			LastReply = "Full Clan"
+			AddQ "Sorry the clan is full."
+			fullclan = True
+			RemoveClan
+			
+	End Select
+End Sub
+
+Sub Event_ClanMemberLeaves(Username)
+	AddQ StringFormat("/w googlegames .del {0}",Username)
+	UpdateUser Username
+End Sub
+
+Sub Event_BotClanInfo(ClanTag, Rank)
+	MyRank = Rank
+	WriteSettingsEntry "MyRank", Rank
+End Sub
+
+Sub Event_BotClanRankChanged(NewRank)
+	MyRank = NewRank
+	WriteSettingsEntry "MyRank", NewRank
+End Sub
+
+Sub Event_UserInChannel(Username, Flags, Message, Ping, Product, StatUpdate)
+	'UserStats()
+	If Count(Username,"@") > 0 Or Count(Username,"#") > 0 Then Exit Sub 
+	UpdateUser Username
+	If ClanGames.Exists(LCase(Username)) Then ClanGames.Remove(LCase(Username))
+	'If LCase(Username) = "googlegames" And LCase(Username) <> LCase(BotVars.Username) Then GGinCH = True
+End Sub
+
+'Update code by Scope
+Sub FetchScript
+	Dim GHTML
+	Set GHTML = CreateObject("MSXML2.XMLHTTP")
+	GHTML.Open "GET", ScriptURL, False
+	GHTML.Send
+
+Set objADOStream = CreateObject("ADODB.Stream")
+		objADOStream.Open
+ 
+	        'adTypeBinary
+		objADOStream.Type = 1
+		objADOStream.Write GHTML.Responsebody
+ 
+	        'Set the stream position to the start
+		objADOStream.Position = 0    
+ 
+	        'create file system object to allow the script to check for an existing file
+	        Set PlusFSO = Createobject("Scripting.FileSystemObject")
+ 
+	        'check if the file exists, if it exists then delete it
+		If PlusFSO.Fileexists(ScriptPath) Then PlusFSO.DeleteFile ScriptPath
+ 
+	        'destroy file system object
+		Set PlusFSO = Nothing
+ 
+	        'save the ado stream to a file
+		objADOStream.SaveToFile ScriptPath
+	        'close the ado stream
+		objADOStream.Close
+ 
+		'destroy the ado stream object
+		Set objADOStream = Nothing
+		
+		AddChat vbgreen, "Script Downloaded Successfully!", vbYellow, " Reloading Script..."
+		ReloadScript()
+
+		Set GHTML = Nothing
+End Sub
+Sub tmpJoin_Timer()
+	AddQ Command(BotVars.Username, "/clan private " & Username, True) : AddQ "Clanmode: Private"
+	tmpJoin.Enabled = False
+End Sub
+
+'// Remove inactive from clan
+Sub Expel_Timer()
+	'Inactive = Split(InActiveUsersTemp,",")
+	If InactiveCounter = 0 Then AddQ "No clan members are inactive. ("& InactiveDays &"+ days)" : Expel.Enabled = False : Exit Sub
+	If ExpelStore.Count > 0 Then
+		x = 0
+		For Each User In ExpelStore.Keys
+			Call Clan.GetUser(Trim(User)).Kickout()
+			If InActiveUsers <> "" Then InActiveUsers = InActiveUsers & ","
+			InActiveUsers = InActiveUsers & User
+			ExpelStore.Remove(User)
+			UpdateUser User
+			plusseen.Remove(User)
+			x = x + 1
+			If x >= 3 Then Exit For
+		Next
+	Else 
+	
+		AddQ "Successfully removed ["& InactiveCounter &"] member(s) who have not logged on for [" & InactiveDays &"+ days]."
+		AddQ InActiveUsers
+		If fullclan Then AddQ "Please rejoin the channel and try again." : fullclan = False
+		InactiveCounter = 0 : InActiveUsers = ""
+		Expel.Enabled = False
+	End If
+	'If UBound(Inactive) > 2 Then Y  = 2 Else Y = UBound(Inactive)
+	'For I = 0 to Y
+	'	Call Clan.GetUser(Trim(Inactive(I))).Kickout()
+	'	SQL = "UPDATE `PlusUsers` SET `Clan` = ''" & _
+	'	" WHERE `Username` = '" & Trim(Inactive(I)) & "'"
+	'	TxCon.Execute(SQL)
+	'	If InActiveUsers <> "" Then InActiveUsers = InActiveUsers & ","
+	'	InActiveUsers = InActiveUsers & Inactive(I)
+	'	InActiveUsersTemp = Replace(InActiveUsersTemp,Inactive(I)&",","")
+	'	InActiveUsersTemp = Replace(InActiveUsersTemp,Inactive(I),"")
+	'Next
+	'If InactiveCounter = 0 Then AddQ "No clan members are inactive. ("& InactiveDays &"+ days)" : Expel.Enabled = False : Exit Sub
+	'If UBound(Split(InActiveUsersTemp,",")) =< 0 Then
+	'If InActiveUsersTemp = "" Then
+	'	AddQ "Successfully removed ["& InactiveCounter &"] member(s) who have not logged on for [" & InactiveDays &"+ days]."
+	'	AddQ InActiveUsers
+	'	If fullclan Then AddQ "Please rejoin the channel and try again." : fullclan = False
+	'	InactiveCounter = 0 : InActiveUsers = ""
+	'	Expel.Enabled = False
+	'End If
+End Sub
+
+Sub RemoveClan()
+	If Not Expel.Enabled Then InactiveCounter = 0 : InActiveUsers = "" Else AddQ "Clan member sweep is already in progress."
+	Dim SafeCount
+	If Realm = "" Or Page = "" Or Page = 0 Then Exit Sub
+	ClanURL = "http://classic.battle.net/war3/ladder/w3xp-clan-profile.aspx?ClanTag=Plus&Gateway=" & Realm
+	GHTML.Open "GET", ClanURL, False
+	GHTML.Send
+	GClan = GHTML.ResponseText
+
+	LastPg = Split(GClan, """"&" ><img")
+	LastPage = Right(LastPg(UBound(LastPg)-1),1)
+	AddQ "Beginning clan member sweep..."
+	ExpelStore.RemoveAll
+	For Page = 1 to LastPage
+	
+		ClanURL = StringFormat("http://classic.battle.net/war3/ladder/w3xp-clan-profile.aspx?ClanTag=Plus&Gateway={0}&SortField=online&SortDir=Asc&PageNo={1}&GPlus={3}",Realm,Page,GetGTC)
+
+		GHTML.Open "GET", ClanURL, False
+		GHTML.Send
+		GClan = GHTML.ResponseText
+		ClanMember = Split(GClan,"Gateway=" & Realm & "&PlayerName=")
+
+		For i = 1 to UBound(ClanMember)
+			Member = Split(Split(ClanMember(i),">")(1),"<")(0)
+			
+			LastLog = Split(Split(ClanMember(i),"</td><td class="&"""rankingRow"""&">")(2),"</td>")(0)
+			LastLog = Replace(LastLog,"	","")
+			LastLog = Replace(LastLog,VBnewline,"")			
+			
+			If LCase(Left(Member,6)) <> "google" And LCase(Left(Member,4)) <> "plus" Then
+				If Ubound(Split(LCase(Safelist),"["&LCase(Member)&"]")) = 0 Then
+					If UBound(Split(LastLog," Days")) > 0 Then
+						If Split(LastLog," Days")(0)+ 0 >= InactiveDays Then
+							InactiveCounter = InactiveCounter + 1
+							If InActiveUsers <> "" Then InActiveUsers = InActiveUsers &","
+							'InActiveUsers = InActiveUsers & Member
+							ExpelStore.Add CStr(Member), InactiveCounter
+							If InactiveCounter > 89 Then Exit For
+						End If
+					End If
+				Else
+				SafeCount = SafeCount + 1
+				End If
+			Else
+				SafeCount = SafeCount + 1
+			End IF	
+		Next
+	Next
+	If InactiveCounter > 89 Then Exit Sub
+
+	'InActiveUsersTemp = InActiveUsers
+	'InActiveUsers = ""
+	
+	Expel.Enabled = True
+	
+End Sub
+
+Sub Event_UserEmote(Username, Flags, Message)
+	'Webbot Username,Message,Flags,"emote",""
+	DCIChat Username,Message,2
+End Sub
+
+Sub Event_PressedEnter(Text)
+
+	If Left(Text,2) = "//" Then Text = BotVars.Trigger&Split(Text,"//",2)(1) : DCIDsp = 0
+	If Left(Text,1) = "/" And DCIDsp = "" Then Text = BotVars.Trigger&Split(Text,"/",2)(1) : DCIDsp = 4
+	DCIChat BotVars.Username,Text,DCIDsp
+End Sub
+
+Public Sub DCIChat(Username, Message, DCIDsp)
+StoreUser = Username
+StoreDSP = DCIDsp
+Veto = False
+	'If DCIDsp = 0 Then DCIDsp = 1 : Veto = True
+
+	If Left(Message,Len(BotVars.Trigger)) = BotVars.Trigger Then
+		GateWay = ""
+		If UBound(Split(Message," ")) = 1 Then
+			If LCase(Split(Message," ")(0)) <> LCase(BotVars.Trigger) & "count" Then Exit Sub
+			GateWay = Realm
+			ClanName = Split(Message," ")(1)
+			Valid = True
+			If Len(ClanName) < 2 Then AddQ "Clan tag is too short." : Exit Sub
+			If Len(ClanName) > 4 Then AddQ "Clan tag is too long." : Exit Sub
+		Else
+
+			If LCase(Split(Message," ")(0)) <> LCase(BotVars.Trigger) & "count" Then Exit Sub
+			If UBound(Split(Message," ")) = 2 Then
+				GateWay = Split(Message," ")(1)
+				Select Case LCase(Gateway)
+					Case "east" Gateway = "azeroth"
+					Case "west" Gateway = "lordaeron"
+					Case "asia" Gateway = "kalimdor"
+					Case "europe" Gateway = "northrend"
+					Case else Gateway = Realm
+				End Select
+				ClanName = Split(Message," ")(2)
+				Valid = True
+			End If
+		End If
+
+		If Valid Then
+			Dsp DCIDsp, CheckClan,Username,VBYellow 
+			If Veto Or DCIDsp = 4 Then VetoThisMessage
+		Else
+			
+		End If
+	End If
+End Sub
+
+Public Function CheckClan()
+	Members = ""
+	Set WebObj = CreateObject("MSXML2.XMLHTTP")
+	If Len(ClanName) > 4 Then CheckClan =  "Invalid clan tag." : Exit Function
+	WebObj.Open "GET", "http://classic.battle.net/war3/ladder/w3xp-clan-profile.aspx?Gateway="&GateWay & "&ClanTag=" & ClanName, False
+	WebObj.Send
+	TxWeb = WebObj.ResponseText
+	If UBound(Split(Split(Split(LCase(TxWeb),"<title>")(1),"</title>")(0),"-")) = 0 Then RetryTag = True 
+	If RetryTag and RetryTag1 Then RetryTag = False : RetryTag1 = False : CheckClan =  "Invalid clan tag." : Exit Function
+	If RetryTag Then RetryTag = False : RetryTag1 = True : DCIChat StoreUser, BotVars.Trigger & "count " & ClanName & " " & GateWay, StoreDSP : Exit Function
+
+	Members = Split(Split(TxWeb," Players</span>")(0),">Total Members:</td></tr><tr><td align = "&"""center"""&"><span style = "&"""font-size: 8pt; font-weight: bold; color: #ffffff;"">")(1)
+	ClanName = Split(Split(TxWeb,"font-weight: bold;"""&">")(1),"</span>")(0)
+	If ClanName = "" Then ClanName= "N/A"
+	If Members = "" Then Members = "N/A"
+	CheckClan = StringFormat("Clan: {0} has {1} members. [{2}]",ClanName,Members,GateWay)
+End Function
+
+Sub Event_WhisperFromUser(Username, Flags, Message, Ping)
+	userAccess = GetDBEntry(Username).Rank
+	If userAccess > 0 then
+		If LCase(Message) = BotVars.Trigger&"letmein" then
+		AddQ "/w " & Username & " You have 5 seconds to join the channel before it will become private."
+		AddQ "Clanmode: Public for 5 seconds to let " & Username & " in." : AddQ Command(BotVars.Username, "/clan public " & Username, True) :
+		tmpJoin.Enabled = True
+		End If
+	End If
+End Sub
+
+'Sub Event_ServerInfo(Message)
+	'If UBound(Split(Message,"StealthBot is hiding your offline friends")) < 1 And UBound(Split(Message,": ")) < 1 Then
+	'	Webbot "server",Message,0,"server",""
+	'End If
+	'If GameCheck Then
+	'GameStatus = True
+	'	If UBound(Split(Message, "using Warcraft III The Frozen Throne in the game ")) Then 
+	'		Name = Split(Split(Message,", ")(0),": ")(1)
+	'		Game = Split(Message,"game ")(1)
+	'		Game = Left(Game,Len(Game)-1)
+	'		ClanGames.Item(LCase(Name)) = Game
+	'	If BotVars.Username = "GoogleGames1" Then
+	'		If WebbotEnabled Then
+	'			IE.Document.All.Item("newname").Value = Game
+	'			IE.Document.All.Item("botname").Value = Name
+	'			IE.Document.All.Item("sb1").Value = DBPass
+	'			IE.Document.All.Item("games-submit").Click
+	'		End If
+	'	End If
+	'	End If
+	'End If
+'End Sub
+
+
+'Sub Event_ChannelJoin(ChannelName, Flags)
+'Chan = ChannelName
+'	UserStats
+'End Sub
+
+
+'Sub Event_LoggedOn(Username, Product)
+'	GameCheck = True
+'	AddQ "/f l"
+'End Sub
+
+'Public Function CurrentGames(GameName)
+'	GameCheck = True
+'	If ClanGames.Count > 0 Then
+'		If GameName <> "" Then
+'			For Each Game In ClanGames.Keys
+'				If UBound(Split(LCase(ClanGames.Item(Game)),LCase(GameName))) > 0 Then
+'					If SpecificGame <> "" Then SpecificGame = SpecificGame & ", "
+'					SpecificGame = SpecificGame & ClanGames.Item(Game)
+'				End If
+'			Next
+'		Else
+'			i = 0
+'			For Each Game In ClanGames.Keys
+'				If i < 3 Then
+'					If AllGames <> "" Then AllGames = AllGames & ", "
+'					AllGames = AllGames & ClanGames.Item(Game)
+'				End If
+'				
+'				If i > 2 AND i < 6 Then
+'					If AllGames1 <> "" Then AllGames1 = AllGames1 & ", "
+'					AllGames1 = AllGames1 & ClanGames.Item(Game)
+'				End If
+'				
+'				If i > 5 Then
+'					If AllGames2 <> "" Then AllGames2 = AllGames2 & ", "
+'					AllGames2 = AllGames2 & ClanGames.Item(Game)
+'				End If
+'				i = i + 1
+'			Next
+'		End If
+'		
+'	GamesAvailable = True : GameStatus = True
+'	End If
+'	If GamesAvailable And GameStatus Then
+'		If SpecificGame <> "" Then 
+'			AddQ StringFormat("Games with [{0}] in the gamename: {1}" ,GameName,SpecificGame)
+'		Else
+'			If GameName <> "" Then AddQ StringFormat("No games have [{0}] in the gamename", GameName)
+'			If AllGames <> "" Then AddQ "Games: " & AllGames
+'			If AllGames1 <> "" Then AddQ "Games: " & AllGames1
+'			If AllGames2 <> "" Then AddQ "Games: " & AllGames2
+'		End If
+'		GameStatus = False : GameCheck = False
+'	Else
+'		AddQ "No games available."
+'	End If
+ 'End Function
+ 
+'Sub Event_MessageSent(MessageID, Message, Tag)
+'	w = "" : Username = Botvars.Username : s = "self" : Msg = Message
+'	
+'	If Left(Message,3) = "/w " Or Left(Message,Len("/whisper ")) = "/whisper " Then
+'		w = "To" : Username = " "&Split(Message)(1) : s = "whisper" : Msg = Split(Message," ",3)(2)
+'	Else
+'		If Left(Message,Len("/f m ")) = "/f m " Then
+'			w = "To" : Username = " your friends" : s = "whisper" : Msg = Split(Message," ",3)(2)
+'		Else
+'			If Left(Message,1) = "/" Then Exit Sub
+'		End If
+'	End If
+'
+'	Webbot Username,Msg,0,s,w
+'
+'End Sub
+
+'Sub Event_ServerError(Message)
+'	Webbot "error",Message,0,"error",""
+'End Sub
+
+Public Sub PlusDBCreate()
+	If TxFSO.FileExists(PlusDB) Then Exit Sub
+	Dim TxCatalog
+	Addchat VByellow, "Creating Plus user database..."
+	Set TxCatalog = CreateObject("ADOX.Catalog")
+	TxCatalog.Create "Provider=Microsoft.Jet.OLEDB.4.0;Jet OLEDB:Engine Type=5;Data Source="&PlusDB
+    PlusConnect
+End Sub
+
+Function PlusTableExists()
+	Dim TxCat, TxTable
+	
+	Set TxCat = CreateObject("ADOX.Catalog")
+	Set TxTable = CreateObject("ADOX.table")
+	Set TxCat.ActiveConnection = TxCon
+
+	For Each TxTable In TxCat.Tables
+		If TxTable.Name = "PlusUsers" Then
+			 PlusTableExists = True
+		End If
+	Next 
+	If PlusTableExists = "" Then PlusTableExists = False
+	Set TxCat = Nothing
+	Set TxTable = Nothing
+End Function
+
+Public Sub PlusConnect()
+	If Not TxFSO.FileExists(PlusDB) Then PlusDBCreate : Exit Sub
+    TxCon.ConnectionString = "Provider=Microsoft.Jet.OLEDB.4.0; Data Source="&PlusDB
+    TxCon.Open
+	NewField = "Pounce"
+	If Not PlusTableExists Then
+		SQL =	"CREATE TABLE `PlusUsers` (" & _
+			"`ID` COUNTER ," & _
+			"`Username` VARCHAR(32) NOT NULL, " & _
+			"`Clan` VARCHAR(4), " & _
+			"`Lastseen` MEMO NULL)"
+		TxCon.Execute(SQL)
+		Addchat VByellow, "Plus user database created."
+	End If
+
+	On Error Resume Next
+	
+	SQL = "SELECT " & NewField & " FROM `PlusUsers`"
+	Set RS = TxCon.Execute(SQL)
+	
+	If RS.Fields(0) = "" Then 
+		sql = "ALTER TABLE PlusUsers ADD " & NewField &" MEMO NULL" 
+		TxCon.Execute (Sql)
+	End If
+
+End Sub
+
+
+Public Sub PlusDBRemove()
+	Dim SQL, RS
+	
+	SQL = "SELECT COUNT(*) FROM `PlusUsers` WHERE `Clan` = 'Plus'"
+	SET RS = TxCon.Execute(SQL)
+	seencount = RS.Fields(0)
+		SQL = "SELECT `Username`, `Lastseen` FROM `PlusUsers` WHERE `Clan` = 'plus'"
+
+	SET RS = TxCon.Execute(SQL)
+	
+	Y = Year(Now()) : M = Month(Now()) : D = Day(Now())
+	H = Hour(Time) : N = Minute(Time) : S = Second(Time)
+	CurrentDate = DateSerial(Y,M,D)
+	CurrentTime = TimeSerial(H,N,S)
+
+	For I = 1 To seencount
+		T = split(RS.Fields(1),"%")
+		Member = RS.Fields(0)
+		If LCase(Left(Member,6)) <> "google" And LCase(Left(Member,4)) <> "plus" And Not plusseen.Exists(Member) Then
+			If Ubound(Split(LCase(Safelist),"["&LCase(Member)&"]")) = 0 Then
+				If DateDiff("d", DateSerial(T(0),T(1),T(2)),CurrentDate) >= InactiveDays Then
+					InactiveCounter = InactiveCounter + 1
+					If InActiveUsers <> "" Then InActiveUsers = InActiveUsers &","
+					ExpelStore.Add CStr(Member), InactiveCounter
+					InActiveUsers = InActiveUsers & Member
+					
+					If InactiveCounter > 89 Then Exit For
+				End If
+			End If
+		End If
+		
+		RS.MoveNext
+	Next
+
+	If InactiveCounter > 89 Then Exit Sub
+	InActiveUsersTemp = InActiveUsers
+	InActiveUsers = ""
+	Expel.Enabled = True
+	
+End Sub
+
+Sub UpdateUser(Username)
+	If Count(Username,"@") > 0 Or Count(Username,"#") > 0 Then Exit Sub 
+	plusseen.Item(Username) = "Seen"
+	ClanTag = Clan.GetUser(Username).Rank
+
+	If ClanTag > 0 Then ClanTag = "Plus" else ClanTag = ""
+	
+	Y = Year(Now()) : M = Month(Now()) : D = Day(Now())
+	H = Hour(Time) : N = Minute(Time) : S = Second(Time)
+	LastSeen = StringFormat("{0}%{1}%{2}%{3}%{4}%{5}",Y,M,D,H,N,S)
+	
+	
+	If PlusDBInfo(Username,"Lastseen") = "*" Then
+		SQL = "INSERT INTO `PlusUsers` (`Username`, `Clan`, `Lastseen`) VALUES ('" & Username & "', '" & ClanTag & "', '" & Lastseen & "' )"
+	Else
+	SQL = "UPDATE `PlusUsers` SET `Clan` = '" & ClanTag & "'" & _
+		", `Lastseen` = '" & LastSeen & "'" & _
+		" WHERE `Username` = '" & Username & "'"
+	End If
+	TxCon.Execute(SQL)
+End Sub
+
+Public Function PlusDBInfo(Username,Info)
+	Dim SQL, RS
+
+	SQL = "SELECT `Username`,`"&Info&"` FROM `PlusUsers` WHERE `Username` = '" & Username & "'"
+	SET RS = TxCon.Execute(SQL)
+
+	If RS.BOF = True AND RS.EOF = True Then
+		PlusDBInfo = "*"
+	Else
+		PlusDBInfo = RS.Fields(0) & "*" & RS.Fields(1)
+	End If
+End Function
+
+Public Function LSeen(User)
+	Y = Year(Now()) : M = Month(Now()) : D = Day(Now())
+	H = Hour(Time) : N = Minute(Time) : S = Second(Time)
+	CurrentDate = DateSerial(Y,M,D)
+	Info = Split(PlusDBInfo(User,"Lastseen"),"*")
+	
+	LastSeen = Info(1)
+	If LastSeen = "" Then 
+		Username = User
+		A = " was never seen."
+	Else
+		Username = Info(0)
+		If plusseen.Exists(Username) Then
+			A = " is here."
+		Else
+			T = split(LastSeen,"%")
+
+			ss = S - T(5) 'second
+			If ss < 0 Then
+				N = N - 1
+				ss = 60 + ss
+			End If
+			nn = N - T(4) 'minute
+
+			If nn < 0 Then
+				H = H - 1
+				nn = 60 + nn
+			End If
+			hh = H - T(3) 'hour
+
+			If hh < 0 Then
+				D = D - 1
+				hh = 24 + hh
+			End If
+			dd = D - T(2) 'day
+
+			If dd < 0 Then
+				M = M - 1
+				dd = dd + 30
+			End If
+			mm = M - T(1) 'month
+
+			If mm < 0 Then
+				Y = Y - 1
+				mm = mm + 12
+			End If
+			yy = Y - T(0) 'year
+			
+			If mm > 0 Then dd = dd + (mm*30)
+			If dd = 0 Then dd = "" Else dd = dd & "d "
+			If hh = 0 Then hh = "" Else hh = hh & "h "
+			If nn = 0 Then nn = "" Else nn = nn & "m "
+			A = StringFormat(" was last seen {0}{1}{2}{3}s ago.", dd,hh,nn,ss)
+		End If
+	End If
+	AddQ Username & A
+End Function
+
+Public Function CheckExpel(Name)
+	If Split(PlusDBInfo(Name,"Clan"),"*")(1) = "----" Then
+		Call Clan.GetUser(Name).KickOut()
+		AddQ Name & " has been kicked out of the clan."
+	End If
+
+End Function
+Sub Event_ServerError(Message)
+	If Message = "All connections closed."  Then plusseen.RemoveAll
+	If Ubound(Split(Message,"[CLAN] Member update:")) > 0 Then GetName = Split(Split(Message,"[CLAN] Member update: ")(1)," ")(0) : CheckExpel(GetName)
+End Sub
+
+Sub pounce(userFrom,userTo,Message)
+	If Count(userFrom,"@") > 0 Or Count(userFrom,"#") > 0 Then Exit Sub 
+	ClanTag = Clan.GetUser(userFrom).Rank
+	If ClanTag > 0 Then
+		If PlusDBInfo(userTo,"Lastseen") = "*" Then
+			SQL = "INSERT INTO `PlusUsers` (`Username`, `Pounce`) VALUES ('" & userTo & "', '" & "\¿n" & userFrom & ": "& Message & "\?n" & "' )"
+		Else
+			Info = PlusDBInfo(userTo,"Pounce")
+			
+			currentMsg = ""
+			If Not Split(Info,"*")(1) = "" then 
+				toUser = Split(Info,"*",2)(0)
+				currentMsg = Split(Info,"*",2)(1)
+			End If
+			
+			SQL = "UPDATE `PlusUsers` SET `Pounce` = '" & currentMsg & "\¿n" & userFrom & ": "& Message & "\?n" & "'" & _
+				" WHERE `Username` = '" & userTo & "'"
+		End If
+		TxCon.Execute(SQL)
+	End If
+End Sub
+
+Sub checkPounce(username)
+	
+	Message = Split(PlusDBInfo(username,"Pounce"),"*")(1)
+	If Message = "" Then Exit sub
+	
+	lineCount = Count(Message,"\¿n")
+	Msg = Split(Message,"\¿n")
+	For i = 1 to lineCount
+	sendMsg = Split(Msg(i),"\?n")(0)
+		AddQ "Pounce from " & sendMsg
+		''addchat vbgreen, "Pounce from " & sendMsg
+	Next
+
+	SQL = "UPDATE `PlusUsers` SET `Pounce` = ''" & _
+		" WHERE `Username` = '" & username & "'"
+		TxCon.Execute(SQL)
+End Sub
+
+
+''Sub Event_PressedEnter(Text)
+''	Addchat vbYellow, Text
+''	Msg = Split(Text," ")
+''	If Msg(0) = "pounce" Then
+''		pounce "R.E.U.B.E.N",Msg(1),Msg(2)
+''	Else
+''		checkPounce Msg(1)
+''	End If
+''End Sub
