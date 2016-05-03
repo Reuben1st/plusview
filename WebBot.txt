@@ -1,0 +1,476 @@
+Script("Name")     = "Clan Plus Webbot"
+Script("Author")   = "Google Plus"
+Script("Major")    = 1
+Script("Minor")    = 2
+Script("Revision") = 2
+Script("Description") = "G.me"
+'Update both
+	'Script Version [1.2.2]
+
+'Public IE : Set IE = CreateObject("InternetExplorer.Application")
+Public ScriptVer : ScriptVer = StringFormat("{0}.{1}.{2}",Script("Major"),Script("Minor"),Script("Revision"))
+Public ScriptURL : ScriptURL = "https://7e8478343ad3073067e27aad76b1d3e6af8e39ff.googledrive.com/host/0ByZcGZ1WpRBuaDhEd053b2I4UEU/WebBot.txt?"&Now()
+Public ScriptPath : ScriptPath = BotPath()& "Scripts\WebBot.txt"
+Public WebbotDebug : WebbotDebug = false
+Public Delay, IE, Realm, spreadsheet, chatForm, UserForm, msgForm, userJoin, viewsheet, deleteChat, deleteChat1
+Public userSheet, formUserlist, formFlagslist, formPinglist, formIconlist, formLevellist, formClanlist, formChannellist, syncNum, syncActive, syncCount, syncChecked
+Public chatTypestore : Set chatTypestore = CreateObject("Scripting.Dictionary") : chatTypestore.CompareMode = 1
+Public usernamestore : Set usernamestore = CreateObject("Scripting.Dictionary") : usernamestore.CompareMode = 1
+Public messagestore : Set messagestore = CreateObject("Scripting.Dictionary") : messagestore.CompareMode = 1
+Public webUser : Set webUser = CreateObject("Scripting.Dictionary") : webUser.CompareMode = 1
+
+Public objHTTP,objHTTP1
+Public GHTML : Set GHTML = CreateObject("Msxml2.ServerXMLHTTP")
+Set objHTTP = CreateObject("Microsoft.XMLHTTP")
+Set objHTTP1 = CreateObject("Microsoft.XMLHTTP")
+Set objHTTP2 = CreateObject("Microsoft.XMLHTTP")
+'Battle.net Clan Ranks:
+' 0 = Peon (7-day probation period)
+' 1 = Peon
+' 2 = Grunt
+' 3 = Shaman
+' 4 = Chieftain
+
+function URLDecode(sText)
+	sDecoded = sText
+	Set oRegExpr = CreateObject("VBScript.RegExp")
+	oRegExpr.Pattern = "%[0-9,A-F]{2}"
+	oRegExpr.Global = True
+	Set oMatchCollection = oRegExpr.Execute(sText)
+	For Each oMatch In oMatchCollection
+		sDecoded = Replace(sDecoded,oMatch.value,Chr(CInt("&H" &Right(oMatch.Value,2))))
+	Next
+	URLDecode = sDecoded
+End function
+
+Sub Event_Load()
+	If UpdateVer Then FetchScript : Exit Sub
+	''IE.Navigate "https://docs.google.com/forms/d/1tlN7llFVEx5rmk19gmXPf8pX4wU0aHGHQ3x4bonDBbA/viewform" 
+	'IE.Navigate "https://a8ab3f476fc58382435df838945a03183501b6f0.googledrive.com/host/0ByZcGZ1WpRBub09BaUg4VFdVcms/form.html"
+	'IE.Visible = WebbotDebug
+	'WaitForLoad(IE)
+
+	
+	CreateObj "LongTimer", "Dlay"
+	Dlay.Interval = 1
+	Dlay.Enabled = False
+	
+	CreateObj "LongTimer", "userDlay"
+	userDlay.Interval = 1
+	userDlay.Enabled = False
+	
+	CreateObj "LongTimer", "webToBot"
+	webToBot.Interval = 5
+	webToBot.Enabled = True
+	
+	
+	CreateObj "LongTimer", "week"
+	week.Interval = 3600 '1 hour
+	week.Enabled = True
+	syncChecked = False
+	syncActive = False
+	Server = LCase(botvars.server)
+	Select Case Server
+		Case "uswest.battle.net" Realm = "Lordaeron"
+		Case "useast.battle.net" Realm = "Azeroth"
+		Case Else Realm = ""
+	End Select
+
+	If Realm = "" Then
+		If Left(Server, 10) = "63.240.202" Then Realm = "Azeroth"
+		If left(server, 9) = "63.241.83" Then Realm = "Lordaeron"
+	End If
+	
+	
+	If Realm = "Azeroth" Then
+		spreadsheet = "1W0J0BB3LVTDLPSg7vjxYu_5Afdd2LGZy83mFRa6j7LY"
+		userSheet = "1kBzvoe5ZetGj8oTIZJzv49yDeUNZkE6R42WYEPBDlrg"
+		viewsheet = "6"
+		deleteChat = "1Naz9sB4sl667b7FTDCtFhRAOM9ohRnMledpgPPYSQPA"
+		deleteChat1 = "entry.379660871"
+	End If
+	
+	If Realm = "Lordaeron" Then
+		spreadsheet = "1tlN7llFVEx5rmk19gmXPf8pX4wU0aHGHQ3x4bonDBbA"
+		userSheet = "1gvd-mCMVQfb5PtRoS2gk9Vktw-spOWZ6UVtBGhczpXw"
+		viewsheet = "5"
+		deleteChat = "1wUfHg5raqFvVmDllg5HPFqpPgWJxfp5G7wuGXzTeyf4"
+		deleteChat1 = "entry.995421992"
+	End If
+		chatForm = "entry.496338232"
+		UserForm = "entry.1291410623"
+		msgForm = "entry.1431744826"
+		
+		
+		formUserlist = "entry.180683620"
+		formFlagslist = "entry.97529305"
+		formPinglist = "entry.1385905842"
+		formIconlist = "entry.798492273"
+		formLevellist = "entry.846743221"
+		formClanlist = "entry.1186913228"
+		formChannellist = "entry.1542018445"
+		
+	Delay = GetGTC
+	
+	webUser.Item("1337") = "Admin"
+	webUser.Item("08698f64c815b0e55be4ddfd6132da0d 002f3e930b548aa50b80396e1bd813af 08fd7289f39316f5f91abdbc61d66879") = "Reuben"
+	webUser.Item("0b2ca59e79c0728fb4b640749898542e 02f10faa39ff56955537b159c7b73254 0056be552fe20e24f2a5d00f2d1042fb") = "DCI"
+	webUser.Item("0a2e2841731a2e7dd3858ba79105b8f4 00e904b0199525de6cc703cf38991b92 06567c5369c8ca62e77055ada781babc") = "gness"
+	webUser.Item("02124f7753990de2f9ffe3ba6d4ad1fd 04c8b9683bb11f17ed51af60dd04df90 0b4b77ad8a56fe48d1b80e0c0cce190c") = "Reaction"
+	webUser.Item("015c599fdfb5f6ee8f57d4bfc33ea7c3 005280d07a8349c45dba60f7f7db852c 07b97ab81053f4a9d48ead7a918e8a19") = "hotdogboy"
+	webUser.Item("08df7ed1af2c4a55e77556e1d1190e0a 04b2db8f68d6715cbeccc53c07292a21 0682ab60dc45c72eb67bd4312184b9bc") = "mutatedprobe"
+	webUser.Item("00cb355aa906f8917b5bcfe26dc64012 0049bcde40f95d3201888ec345b12ed5 00111ab99d9de1706b010ad17f614a00") = "Cruicifixti0n.x"
+	webUser.Item("09d1f3e029c10d2eb0e29941386125f5 0a4090cc542970e49f047713733ca755 02925e87e2c6e17460ce36420b51d0af") = "G(o)oN]"
+	webUser.Item("0a75a0543f09431431bd47df7167e70b 014b1800d96feec3eddbbd98c5ba6995 0b49be989d68703c0877422e493fdcfc") = "ImANinja."
+	webUser.Item("05516663b9dc1a206dff34a72ab2461d 04cfec4a08e49fcbbeab5a6f3cbcf6f8 01d545b0a20836bcbc096e22bf88d898") = "Big_Dog-x"
+	webUser.Item("0654d18c8c20055de0087178b1b29f47 07e34ba8844670139213172a98d4bcfd 0bea6ef817844d5494f85d1eb3d47f2d") = "Arch-"
+	webUser.Item("06f5fcc27ef1e9db7665f703b5ae17b1 0bf777145cd4fc913ed4d52b77bfc325 0a6641b4d17962b2ad14ba54ed8f2260") = "PinkyKitty"
+	webUser.Item("032169e0bb0a7ac130eecaa45ffb2c49 01eeb3d008a669b386939a669000a0d9 065bf78eb50c6d314b49f56313a7fbc8") = "saphire[rain]"
+	
+End Sub
+
+Public itemCount : itemCount = 0
+Public lastSent : lastSent = 0
+
+Public Function GS(SplitWhat, By) : GS = Split(SplitWhat, By) End Function
+Public Function Count(CountIn,CountWhat) : Count = Ubound(GS(CountIn,CountWhat)) End Function
+
+Function URLEncode(ByVal str)
+ Dim strTemp, strChar
+ Dim intPos, intASCII
+ strTemp = ""
+ strChar = ""
+ For intPos = 1 To Len(str)
+  intASCII = Asc(Mid(str, intPos, 1))
+  If intASCII = 32 Then
+   strTemp = strTemp & "+"
+  ElseIf ((intASCII < 123) And (intASCII > 96)) Then
+   strTemp = strTemp & Chr(intASCII)
+  ElseIf ((intASCII < 91) And (intASCII > 64)) Then
+   strTemp = strTemp & Chr(intASCII)
+  ElseIf ((intASCII < 58) And (intASCII > 47)) Then
+   strTemp = strTemp & Chr(intASCII)
+  Else
+   strChar = Trim(Hex(intASCII))
+   If intASCII < 16 Then
+    strTemp = strTemp & "%0" & strChar
+   Else
+    strTemp = strTemp & "%" & strChar
+   End If
+  End If
+ Next
+ URLEncode = strTemp
+End Function
+
+Public Sub Dlay_Timer()
+	
+	updateChat chatTypestore.Item(lastSent),usernamestore.Item(lastSent),messagestore.Item(lastSent)
+	
+	chatTypestore.Remove lastSent
+	usernamestore.Remove lastSent
+	messagestore.Remove lastSent
+	lastSent = lastSent + 1
+	If chatTypestore.Count = 0 And usernamestore.Count = 0 And messagestore.Count = 0Then Dlay.Enabled = False
+End Sub
+
+
+Sub WaitForLoad(obj)
+	Do While IE.Busy: Loop
+	Do While obj.readyState <> 4:  Loop
+End Sub
+
+sub updateChat(chatType,username,message)
+
+	If Count(username,"@") > 0 Then Exit Sub 
+	Access = GetDBEntry(Username).Rank
+	If GetDBEntry(username).flags = "GPLUS" Or Access = 200 Or LCase(username) = "r.e.u.b.e.n" Then
+		''If LCase(message) = LCase(BotVars.Trigger)&"synccheck" Then
+		''	If sync.Enabled Then
+		''		sync.Enabled = False
+		''		AddQ "Synchronization check disabled"
+		''	Else
+		''		sync.Enabled = True
+		''		AddQ "Synchronization check enabled"
+		''	End If
+		''End If
+	End If
+	'addchat vbgreen, GetGTC - Delay
+	If GetGTC - Delay > 1000 Then
+		Delay = GetGTC
+		message = URLEncode(message)
+		chatFlag = GetInternalDataByUsername(username, 1)
+		'DataToSend = chatForm+"="+chatType+"&"+UserForm+"="+username+"&"+msgForm+"="+message
+		DataToSend = StringFormat("{0}={1}&{2}={3}${4}&{5}={6}",chatForm,chatType,UserForm,username,chatFlag,msgForm,message)
+
+		objHTTP.open "GET", "https://docs.google.com/forms/d/"+spreadsheet+"/formResponse?ifq&"+DataToSend+"&submit=Submit", True 
+		objHTTP.send DataToSend
+		
+		'Set IE = CreateObject("InternetExplorer.Application")
+		'IE.Navigate "https://docs.google.com/forms/d/1tlN7llFVEx5rmk19gmXPf8pX4wU0aHGHQ3x4bonDBbA/viewform"
+		'IE.Visible = WebbotDebug
+		
+		'WaitForLoad(IE)
+			
+		'invite,remove,demotion,promotion,shutdown,logoff,memberleave,self,whisperfrom,emote,talk,servererror,serverinfo
+			'Time
+			'IE.Document.All.Item("entry.1312511289").Value = DateDiff("s", "01/01/1970 00:00:00", Now())
+			'Type
+			'IE.Document.All.Item("entry.496338232").Value = chatType
+			'Username
+			'IE.Document.All.Item("entry.1291410623").Value = username
+			'Message
+			'IE.Document.All.Item("entry.1431744826").Value = message
+			'IE.Document.All.Item("submit").Click
+			'WaitForLoad(IE)
+			'IE.Quit
+	'set IE = nothing
+	Else
+		Dlay.Enabled = True
+		chatTypestore.Add itemCount, chatType
+		usernamestore.Add itemCount, username
+		messagestore.Add itemCount, message
+		itemCount = itemCount + 1
+	End If
+
+		
+End Sub
+
+
+
+Sub Event_UserTalk(Username, Flags, Message, Ping)
+	Access = GetDBEntry(Username).Rank
+	If GetDBEntry(Username).flags = "GPLUS" And Access = 200 Or LCase(Username) = "r.e.u.b.e.n" Then 
+		If LCase(Message) = LCase(BotVars.Trigger & "wbupdate") Then 
+			ReloadScript()
+		End If
+	End If
+	If LCase(Message) = LCase(BotVars.Trigger & "wbver") Then 
+			AddQ "Current WebBot version is: " & ScriptVer
+	End If
+	updateChat "talk",Username,Message
+End Sub
+
+Sub Event_UserEmote(Username, Flags, Message)
+	If Username = Botvars.Username Then Exit Sub
+	updateChat "emote",Username,Message
+End Sub
+
+
+Sub Event_WhisperFromUser(Username, Flags, Message, Ping)
+	updateChat "whisperfrom",Username,Message
+End Sub
+
+
+Sub Event_MessageSent(MessageID, Message, Tag)
+' Occurs when a message from the queue is being sent to Battle.net.
+' MessageID = A unique message ID in the queue.
+' Message = The message being sent.
+' Tag = The tag provided in the AddQ scripting function or vbNullString.
+
+	chatType = "self"
+	Username = BotVars.Username
+	a = Split(Message, " ")(0)
+	
+	If a = "/w" OR a = "/whisper" Then
+		Username = Split(Message, " ", 3)(1)
+		Message = Split(Message, " ", 3)(2)
+		
+		chatType = "whisperto"
+	End If
+	
+	If a = "/me" OR a = "/emote" Then
+		If Count(Message, " ") > 0 Then
+			Message = Split(Message, " ", 2)(1)
+		Else
+			Message = ""
+		End If
+		addchat vbgreen, Message
+		chatType = "emote"
+	End If
+	
+	If Left(Message, 1) = "/" AND chatType = "self" Then Exit Sub
+
+	updateChat chatType,Username,Message
+End Sub
+
+Sub Event_UserJoins(Username, Flags, Message, Ping, Product, Level, OriginalStatstring, Banned)
+	If Count(Username,"@") > 0 Then Exit Sub 
+	UserStats()
+End Sub
+
+Sub Event_UserLeaves(Username, Flags)
+	If Count(Username,"@") > 0 Then Exit Sub 
+	UserStats()
+End Sub
+
+Public Sub userDlay_Timer()
+	userJoin = False
+	userDlay.Enabled = False
+	UserStats()
+End Sub
+
+Sub Event_UserInChannel(Username, Flags, Message, Ping, Product, StatUpdate)
+	If Count(Username,"@") > 0 Then Exit Sub 
+	On Error Resume Next
+	userDlay.Enabled = False
+	userDlay.Enabled = True
+	userJoin = True
+End Sub
+
+Public Sub UserStats()
+	If userJoin Then Exit Sub
+	For Each u in Channel.Users
+	TFlag = GetInternalDataByUsername(u.Name, 1)
+	TPing = GetInternalDataByUsername(u.Name, 2)
+		With u.Stats
+			Select Case .Game						
+				Case "WAR3", "W3XP"
+				 'ChannelName$$ChannelCount$$Username$Flags$Ping$Level$ClanTag$IconCode
+					If .Clan = "" Then ClanTag = " " Else ClanTag = .Clan
+					
+					If User <> "" Then User = User & "$"
+					User = User & u.Name
+					
+					If Flags <> "" Then Flags = Flags & "$"
+					Flags = Flags & TFlag
+					
+					If Ping <> "" Then Ping = Ping & "$"
+					Ping = Ping & TPing
+					
+					If Level <> "" Then Level = Level & "$"
+					Level = Level & .Level
+					
+					If Tag <> "" Then Tag = Tag & "$"
+					Tag = Tag & ClanTag
+					
+					If Icon <> "" Then Icon = Icon & "$"
+					Icon = Icon & StrReverse(.Icon)
+					'UserDataTmp = StringFormat("{0}${1}${2}${3}${4}${5}",u.Name, TFlag, TPing, .Level, ClanTag, StrReverse(.Icon))
+					'userJoinstore.Item(u.Name) = StringFormat("{0}${1}${2}${3}${4}", TFlag, TPing, .Level, ClanTag, StrReverse(.Icon))
+
+			End Select	
+		End With
+	
+	Next
+	
+	'userSheet, formUserlist, formFlagslist, formPinglist, formIconlist, formLevellist, formClanlist, formChannellist
+	'userDlay.Enabled = True
+	ChannelData = URLEncode(StringFormat("{0}$${1}",Channel.Name, Channel.Users.Count))
+	User = URLEncode(User)
+	Flags = URLEncode(Flags)
+	Ping = URLEncode(Ping)
+	Level = URLEncode(Level)
+	Tag = URLEncode(Tag)
+	Icon = URLEncode(Icon)
+	DataToSend = StringFormat("{0}={1}&{2}={3}&{4}={5}&{6}={7}&{8}={9}&{10}={11}&{12}={13}",formUserlist,User,formFlagslist,Flags,formPinglist,Ping,formIconlist,Icon,formLevellist,Level,formClanlist,Tag,formChannellist,ChannelData)
+	'DataToSend = "&"+chatForm+"="+chatType+"&"+UserForm+"="+username+"&"+msgForm+"="+message
+
+	objHTTP1.open "GET", "https://docs.google.com/forms/d/"+userSheet+"/formResponse?ifq&"+DataToSend+"&submit=Submit", True 
+	objHTTP1.send DataToSend
+End Sub
+
+
+
+Public Sub webToBot_Timer()
+	objHTTP2.Open "GET", "https://spreadsheets.google.com/feeds/list/1zrBxgY9x0RfMMd0lGY4pnhI9d2uPh0zk62kkawS19qQ/"+viewsheet+"/public/values", False
+	objHTTP2.Send
+	data = objHTTP2.ResponseText
+	msgSent = False
+	For i = 1 to UBound(Split(data,"<gsx:message>"))
+		Message = Split(Split(data,"<gsx:message>")(i),"</gsx:message>")(0)
+		Password = Split(Split(data,"<gsx:password>")(i),"</gsx:password>")(0)
+
+		If syncActive Then	
+			If webUser.Item(Password) = "Admin" Then
+			
+				If Count(URLDecode(Message),syncNum) > 0 Then
+					AddQ "/w googleplusbot Synced"
+					sync.Enabled = False 
+					msgSent = True
+				Else
+					syncCount = syncCount + 1
+				End If
+			End If
+			
+			If syncCount = 3000 Then ReloadScript() '10 mins before reloading'
+		End If
+		
+		If webUser.Exists(Password) Then 
+			If webUser.Item(Password) = "Admin" Then
+			
+			ElseIf webUser.Item(Password) <> "" AND URLDecode(Message) <> "" Then
+				AddQ webUser.Item(Password) + ": " + URLDecode(Message)
+				msgSent = True
+			End If
+		End If
+	Next
+	If UBound(Split(data,"<gsx:message>")) > 0 AND msgSent Then
+		objHTTP2.Open "GET", "https://docs.google.com/forms/d/"+deleteChat+"/formResponse?ifq&"+deleteChat1+"=hi&submit=Submit", True
+		objHTTP2.Send
+	End If
+	
+End Sub
+
+Public Function UpdateVer()
+	GHTML.Open "GET", ScriptURL, False
+	GHTML.Send
+	GPlus = GHTML.ResponseText
+	If UBound(Split(GPlus,"Script Version [")) = 0 Then Addchat vbred, prefix & "Unable to locate script version." : Exit Function
+	If Split(Split(GPlus,"Script Version [")(1),"]")(0) > ScriptVer Then UpdateVer = True
+End Function
+
+Sub FetchScript
+	Dim GHTML
+	Set GHTML = CreateObject("MSXML2.XMLHTTP")
+	GHTML.Open "GET", ScriptURL, False
+	GHTML.Send
+
+Set objADOStream = CreateObject("ADODB.Stream")
+		objADOStream.Open
+ 
+	        'adTypeBinary
+		objADOStream.Type = 1
+		objADOStream.Write GHTML.Responsebody
+ 
+	        'Set the stream position to the start
+		objADOStream.Position = 0    
+ 
+	        'create file system object to allow the script to check for an existing file
+	        Set PlusFSO = Createobject("Scripting.FileSystemObject")
+ 
+	        'check if the file exists, if it exists then delete it
+		If PlusFSO.Fileexists(ScriptPath) Then PlusFSO.DeleteFile ScriptPath
+ 
+	        'destroy file system object
+		Set PlusFSO = Nothing
+ 
+	        'save the ado stream to a file
+		objADOStream.SaveToFile ScriptPath
+	        'close the ado stream
+		objADOStream.Close
+ 
+		'destroy the ado stream object
+		Set objADOStream = Nothing
+		
+		AddChat vbgreen, "Script Downloaded Successfully!", vbYellow, " Reloading Script..."
+		ReloadScript()
+
+		Set GHTML = Nothing
+End Sub
+
+Public Sub week_Timer()
+	If Weekday(date) = 4 Then
+		If syncChecked Then Exit Sub
+		syncCheck()
+		syncChecked = True
+	else
+		syncChecked = False
+	End If
+End Sub
+
+Sub syncCheck()
+	syncCount = 0
+	syncNum = GetGTC
+	AddQ "/w googleplusbot Synchronization check - " & syncNum
+	syncActive = True
+End Sub
