@@ -2,10 +2,10 @@ Script("Name")     = "Clan Plus"
 Script("Author")   = "Google Plus"
 Script("Major")    = 2
 Script("Minor")    = 1
-Script("Revision") = 6
+Script("Revision") = 7
 Script("Description") = "G.me"
 'Update both
-	'Script Version [2.1.6]
+	'Script Version [2.1.7]
 
 Public ScriptVer : ScriptVer = StringFormat("{0}.{1}.{2}",Script("Major"),Script("Minor"),Script("Revision"))
 Private Const prefix    = "[Plus] "
